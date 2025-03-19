@@ -27,9 +27,6 @@
             from { opacity: 0; transform: translateY(-20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        h2 {
-            margin-bottom: 10px;
-        }
         .password-wrapper {
             position: relative;
             width: 100%;
@@ -103,6 +100,7 @@
         document.addEventListener("DOMContentLoaded", async function () {
             const urlParams = new URLSearchParams(window.location.search);
             const oobCode = urlParams.get('oobCode');
+            console.log("oobCode из URL:", oobCode);
 
             if (!oobCode) {
                 alert("Ошибка: Неверная ссылка для сброса пароля.");
@@ -114,10 +112,15 @@
 
             try {
                 const actionResult = await checkActionCode(auth, oobCode);
-                const userEmail = actionResult.data.email;
+                console.log("Ответ Firebase checkActionCode:", actionResult);
+
+                const userEmail = actionResult.email;
+                console.log("Извлеченный email:", userEmail);
+
                 emailElement.textContent = userEmail;
                 resetButton.disabled = false;
             } catch (error) {
+                console.error("Ошибка получения email:", error);
                 emailElement.textContent = "Ошибка получения email";
                 alert("Ошибка: " + error.message);
             }
@@ -150,6 +153,7 @@
                     alert("Пароль успешно сброшен!");
                     window.location.href = "/login";
                 } catch (error) {
+                    console.error("Ошибка сброса пароля:", error);
                     alert("Ошибка: " + error.message);
                 }
             });
