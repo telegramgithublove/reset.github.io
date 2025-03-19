@@ -31,9 +31,11 @@
         .password-wrapper {
             position: relative;
             width: 100%;
+            display: flex;
+            align-items: center;
         }
         .password-wrapper input {
-            width: calc(100% - 30px);
+            width: calc(100% - 60px); /* Уменьшаем ширину для двух иконок */
             padding: 10px;
             margin: 10px 0;
             border: 1px solid #ccc;
@@ -43,11 +45,20 @@
         }
         .password-wrapper i {
             position: absolute;
-            right: 10px;
             top: 50%;
             transform: translateY(-50%);
             cursor: pointer;
             color: #666;
+            transition: color 0.3s;
+        }
+        .password-wrapper .fa-eye, .password-wrapper .fa-eye-slash {
+            right: 35px; /* Иконка "глаз" левее */
+        }
+        .password-wrapper .fa-copy {
+            right: 10px; /* Иконка "копировать" справа */
+        }
+        .password-wrapper i:hover {
+            color: #667eea; /* Цвет при наведении */
         }
         button {
             background: #667eea;
@@ -75,6 +86,7 @@
         <div class="password-wrapper">
             <input type="password" id="password" placeholder="Введите новый пароль">
             <i class="fas fa-eye" id="togglePassword"></i>
+            <i class="fas fa-copy" id="copyPassword" title="Скопировать пароль"></i>
         </div>
         <div class="validation-messages" id="validationMessages"></div>
         <button id="resetButton" disabled>Сбросить пароль</button>
@@ -105,6 +117,7 @@
             const resetButton = document.getElementById("resetButton");
             const passwordField = document.getElementById("password");
             const validationElement = document.getElementById("validationMessages");
+            const copyPasswordIcon = document.getElementById("copyPassword");
 
             console.log("Параметры URL:", { mode, oobCode });
 
@@ -157,6 +170,20 @@
                 this.classList.toggle("fa-eye-slash");
             });
 
+            copyPasswordIcon.addEventListener("click", async function () {
+                try {
+                    await navigator.clipboard.writeText(passwordField.value);
+                    console.log("Пароль скопирован в буфер обмена!");
+                    copyPasswordIcon.style.color = "#28a745"; // Зеленый цвет при успехе
+                    setTimeout(() => {
+                        copyPasswordIcon.style.color = "#666"; // Возврат к исходному цвету
+                    }, 1000);
+                } catch (err) {
+                    console.error("Ошибка копирования:", err);
+                    validationElement.textContent = "Ошибка копирования пароля.";
+                }
+            });
+
             passwordField.addEventListener("input", function () {
                 const validationMessage = validatePassword(passwordField.value);
                 validationElement.textContent = validationMessage || "";
@@ -174,8 +201,7 @@
 
                 try {
                     await confirmPasswordReset(auth, oobCode, newPassword);
-                    alert("Пароль успешно сброшен!");
-                    window.location.href = "http://localhost:5174/login"; // Исправленный редирект
+                    window.location.href = "http://localhost:5174/login";
                 } catch (error) {
                     console.error("Ошибка сброса пароля:", error);
                     validationElement.textContent = `Ошибка: ${error.message}`;
