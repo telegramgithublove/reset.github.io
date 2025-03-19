@@ -84,15 +84,15 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, confirmPasswordReset, checkActionCode } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
-            const firebaseConfig = {
-              apiKey: "AIzaSyC-vJAy9Adce0C4ixxZPsuEdJLcmxJMB6k",
-              authDomain: "forum-a36e8.firebaseapp.com",
-              projectId: "forum-a36e8",
-              storageBucket: "forum-a36e8.firebasestorage.app",
-              messagingSenderId: "783823450857",
-              appId: "1:783823450857:web:0984ea46bb8d195c943678",
-              databaseURL: "https://forum-a36e8-default-rtdb.asia-southeast1.firebasedatabase.app"
-            };
+        const firebaseConfig = {
+            apiKey: "AIzaSyC-vJAy9Adce0C4ixxZPsuEdJLcmxJMB6k",
+            authDomain: "forum-a36e8.firebaseapp.com",
+            projectId: "forum-a36e8",
+            storageBucket: "forum-a36e8.firebasestorage.app",
+            messagingSenderId: "783823450857",
+            appId: "1:783823450857:web:0984ea46bb8d195c943678",
+            databaseURL: "https://forum-a36e8-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -103,6 +103,7 @@
             const emailElement = document.getElementById("email");
             const resetButton = document.getElementById("resetButton");
             const passwordField = document.getElementById("password");
+            const validationElement = document.getElementById("validationMessages");
 
             if (!oobCode) {
                 alert("Ошибка: Неверная ссылка для сброса пароля.");
@@ -119,12 +120,23 @@
             }
 
             function generateSecurePassword() {
-                const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?";
+                const upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                const lowerCase = "abcdefghijklmnopqrstuvwxyz";
+                const numbers = "0123456789";
+                const specialChars = "!@#$%^&*()_+[]{}|;:,.<>?";
+                const allChars = upperCase + lowerCase + numbers + specialChars;
+
                 let password = "";
-                for (let i = 0; i < 12; i++) {
-                    password += charset.charAt(Math.floor(Math.random() * charset.length));
+                password += upperCase[Math.floor(Math.random() * upperCase.length)];
+                password += lowerCase[Math.floor(Math.random() * lowerCase.length)];
+                password += numbers[Math.floor(Math.random() * numbers.length)];
+                password += specialChars[Math.floor(Math.random() * specialChars.length)];
+
+                for (let i = 4; i < 12; i++) {
+                    password += allChars[Math.floor(Math.random() * allChars.length)];
                 }
-                return password;
+
+                return password.split("").sort(() => Math.random() - 0.5).join("");
             }
 
             passwordField.value = generateSecurePassword();
@@ -134,9 +146,14 @@
                 this.classList.toggle("fa-eye-slash");
             });
 
+            passwordField.addEventListener("input", function () {
+                const validationMessage = validatePassword(passwordField.value);
+                validationElement.textContent = validationMessage ? validationMessage : "";
+                resetButton.disabled = !!validationMessage;
+            });
+
             resetButton.addEventListener("click", async function () {
                 const newPassword = passwordField.value;
-                const validationElement = document.getElementById("validationMessages");
                 const validationMessage = validatePassword(newPassword);
 
                 if (validationMessage) {
