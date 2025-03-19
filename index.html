@@ -84,15 +84,14 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
         import { getAuth, confirmPasswordReset, checkActionCode } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
 
-                const firebaseConfig = {
-                      apiKey: "AIzaSyC-vJAy9Adce0C4ixxZPsuEdJLcmxJMB6k",
-                      authDomain: "forum-a36e8.firebaseapp.com",
-                      projectId: "forum-a36e8",
-                      storageBucket: "forum-a36e8.firebasestorage.app",
-                      messagingSenderId: "783823450857",
-                      appId: "1:783823450857:web:0984ea46bb8d195c943678",
-                      databaseURL: "https://forum-a36e8-default-rtdb.asia-southeast1.firebasedatabase.app"
-                };
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -100,48 +99,45 @@
         document.addEventListener("DOMContentLoaded", async function () {
             const urlParams = new URLSearchParams(window.location.search);
             const oobCode = urlParams.get('oobCode');
+            const emailElement = document.getElementById("email");
+            const resetButton = document.getElementById("resetButton");
+            const passwordField = document.getElementById("password");
 
             if (!oobCode) {
                 alert("Ошибка: Неверная ссылка для сброса пароля.");
                 return;
             }
 
-            console.log("oobCode из URL:", oobCode);
-
-            const emailElement = document.getElementById("email");
-            const resetButton = document.getElementById("resetButton");
-
             try {
                 const actionResult = await checkActionCode(auth, oobCode);
-                console.log("Ответ Firebase checkActionCode:", actionResult);
-
-                const userEmail = actionResult?.data?.email || actionResult?.email || "Email не найден";
-                console.log("Извлеченный email:", userEmail);
-
-                emailElement.textContent = userEmail;
+                emailElement.textContent = actionResult.data.email || "Неизвестный email";
                 resetButton.disabled = false;
             } catch (error) {
                 emailElement.textContent = "Ошибка получения email";
-                console.error("Ошибка при checkActionCode:", error);
                 alert("Ошибка: " + error.message);
             }
 
-            document.getElementById("togglePassword").addEventListener("click", function () {
-                const passwordField = document.getElementById("password");
-                if (passwordField.type === "password") {
-                    passwordField.type = "text";
-                    this.classList.replace("fa-eye", "fa-eye-slash");
-                } else {
-                    passwordField.type = "password";
-                    this.classList.replace("fa-eye-slash", "fa-eye");
+            function generateSecurePassword() {
+                const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?";
+                let password = "";
+                for (let i = 0; i < 12; i++) {
+                    password += charset.charAt(Math.floor(Math.random() * charset.length));
                 }
+                return password;
+            }
+
+            passwordField.value = generateSecurePassword();
+
+            document.getElementById("togglePassword").addEventListener("click", function () {
+                passwordField.type = passwordField.type === "password" ? "text" : "password";
+                this.classList.toggle("fa-eye-slash");
             });
 
             resetButton.addEventListener("click", async function () {
-                const newPassword = document.getElementById("password").value;
+                const newPassword = passwordField.value;
                 const validationElement = document.getElementById("validationMessages");
-
                 const validationMessage = validatePassword(newPassword);
+
                 if (validationMessage) {
                     validationElement.textContent = validationMessage;
                     return;
@@ -154,24 +150,17 @@
                     alert("Пароль успешно сброшен!");
                     window.location.href = "/login";
                 } catch (error) {
-                    console.error("Ошибка при сбросе пароля:", error);
                     alert("Ошибка: " + error.message);
                 }
             });
 
             function validatePassword(password) {
                 const minLength = 12;
-                const hasUppercase = /[A-Z]/.test(password);
-                const hasLowercase = /[a-z]/.test(password);
-                const hasNumber = /\d/.test(password);
-                const hasSpecial = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password);
-
                 if (password.length < minLength) return "Пароль должен быть не менее 12 символов.";
-                if (!hasUppercase) return "Пароль должен содержать как минимум одну заглавную букву.";
-                if (!hasLowercase) return "Пароль должен содержать как минимум одну строчную букву.";
-                if (!hasNumber) return "Пароль должен содержать как минимум одну цифру.";
-                if (!hasSpecial) return "Пароль должен содержать как минимум один специальный символ.";
-
+                if (!/[A-Z]/.test(password)) return "Пароль должен содержать заглавную букву.";
+                if (!/[a-z]/.test(password)) return "Пароль должен содержать строчную букву.";
+                if (!/\d/.test(password)) return "Пароль должен содержать хотя бы одну цифру.";
+                if (!/[!@#$%^&*()_+\-={}\[\]:;,.<>?]/.test(password)) return "Пароль должен содержать спецсимвол.";
                 return null;
             }
         });
