@@ -100,7 +100,7 @@
         document.addEventListener("DOMContentLoaded", async function () {
             const urlParams = new URLSearchParams(window.location.search);
             const oobCode = urlParams.get('oobCode');
-            const mode = urlParams.get('mode'); // Добавляем проверку mode
+            const mode = urlParams.get('mode');
             const emailElement = document.getElementById("email");
             const resetButton = document.getElementById("resetButton");
             const passwordField = document.getElementById("password");
@@ -175,7 +175,7 @@
                 try {
                     await confirmPasswordReset(auth, oobCode, newPassword);
                     alert("Пароль успешно сброшен!");
-                    window.location.href = "/login";
+                    window.location.href = "http://localhost:5174/login"; // Исправленный редирект
                 } catch (error) {
                     console.error("Ошибка сброса пароля:", error);
                     validationElement.textContent = `Ошибка: ${error.message}`;
