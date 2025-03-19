@@ -31,28 +31,34 @@
         .password-wrapper {
             position: relative;
             width: 100%;
-            margin: 10px 0; /* Разумный отступ сверху и снизу */
+            display: flex;
+            align-items: center;
         }
         .password-wrapper input {
-            width: 100%;
-            padding: 10px 40px 10px 10px; /* Отступ справа для иконок */
+            width: calc(100% - 60px); /* Уменьшаем ширину для двух иконок */
+            padding: 10px;
+            margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
             font-size: 16px;
-            box-sizing: border-box; /* Предотвращает смещение */
+            padding-right: 35px;
         }
-        .password-icons {
+        .password-wrapper i {
             position: absolute;
-            right: 10px;
             top: 50%;
             transform: translateY(-50%);
-            display: flex;
-            gap: 8px; /* Расстояние между иконками */
-        }
-        .password-icons i {
             cursor: pointer;
             color: #666;
-            font-size: 16px;
+            transition: color 0.3s;
+        }
+        .password-wrapper .fa-eye, .password-wrapper .fa-eye-slash {
+            right: 35px; /* Иконка "глаз" левее */
+        }
+        .password-wrapper .fa-copy {
+            right: 10px; /* Иконка "копировать" справа */
+        }
+        .password-wrapper i:hover {
+            color: #667eea; /* Цвет при наведении */
         }
         button {
             background: #667eea;
@@ -79,10 +85,8 @@
         <p>Для <strong id="email">загрузка...</strong></p>
         <div class="password-wrapper">
             <input type="password" id="password" placeholder="Введите новый пароль">
-            <div class="password-icons">
-                <i class="fas fa-copy" id="copyPassword" title="Копировать пароль"></i>
-                <i class="fas fa-eye" id="togglePassword" title="Показать пароль"></i>
-            </div>
+            <i class="fas fa-eye" id="togglePassword"></i>
+            <i class="fas fa-copy" id="copyPassword" title="Скопировать пароль"></i>
         </div>
         <div class="validation-messages" id="validationMessages"></div>
         <button id="resetButton" disabled>Сбросить пароль</button>
@@ -113,6 +117,7 @@
             const resetButton = document.getElementById("resetButton");
             const passwordField = document.getElementById("password");
             const validationElement = document.getElementById("validationMessages");
+            const copyPasswordIcon = document.getElementById("copyPassword");
 
             console.log("Параметры URL:", { mode, oobCode });
 
@@ -160,22 +165,23 @@
 
             passwordField.value = generateSecurePassword();
 
-            // Копирование пароля
-            document.getElementById("copyPassword").addEventListener("click", function () {
-                navigator.clipboard.writeText(passwordField.value)
-                    .then(() => {
-                        alert("Пароль скопирован в буфер обмена!");
-                    })
-                    .catch(err => {
-                        console.error("Ошибка копирования:", err);
-                        alert("Не удалось скопировать пароль.");
-                    });
-            });
-
-            // Переключение видимости пароля
             document.getElementById("togglePassword").addEventListener("click", function () {
                 passwordField.type = passwordField.type === "password" ? "text" : "password";
                 this.classList.toggle("fa-eye-slash");
+            });
+
+            copyPasswordIcon.addEventListener("click", async function () {
+                try {
+                    await navigator.clipboard.writeText(passwordField.value);
+                    console.log("Пароль скопирован в буфер обмена!");
+                    copyPasswordIcon.style.color = "#28a745"; // Зеленый цвет при успехе
+                    setTimeout(() => {
+                        copyPasswordIcon.style.color = "#666"; // Возврат к исходному цвету
+                    }, 1000);
+                } catch (err) {
+                    console.error("Ошибка копирования:", err);
+                    validationElement.textContent = "Ошибка копирования пароля.";
+                }
             });
 
             passwordField.addEventListener("input", function () {
@@ -195,8 +201,7 @@
 
                 try {
                     await confirmPasswordReset(auth, oobCode, newPassword);
-                    alert("Пароль успешно сброшен!");
-                    window.location.href = "/login";
+                    window.location.href = "http://localhost:5174/login"; // Явный редирект на маршрут логина
                 } catch (error) {
                     console.error("Ошибка сброса пароля:", error);
                     validationElement.textContent = `Ошибка: ${error.message}`;
