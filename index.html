@@ -81,14 +81,14 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
-        import { getAuth, confirmPasswordReset, checkActionCode } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+        import { getAuth, confirmPasswordReset, checkActionCode } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC-vJAy9Adce0C4ixxZPsuEdJLcmxJMB6k",
             authDomain: "forum-a36e8.firebaseapp.com",
             projectId: "forum-a36e8",
-            storageBucket: "forum-a36e8.firebasestorage.app",
+            storageBucket: "forum-a36e8.appspot.com",
             messagingSenderId: "783823450857",
             appId: "1:783823450857:web:0984ea46bb8d195c943678",
             databaseURL: "https://forum-a36e8-default-rtdb.asia-southeast1.firebasedatabase.app"
@@ -100,13 +100,22 @@
         document.addEventListener("DOMContentLoaded", async function () {
             const urlParams = new URLSearchParams(window.location.search);
             const oobCode = urlParams.get('oobCode');
+            const mode = urlParams.get('mode'); // Добавляем проверку mode
             const emailElement = document.getElementById("email");
             const resetButton = document.getElementById("resetButton");
             const passwordField = document.getElementById("password");
             const validationElement = document.getElementById("validationMessages");
 
+            console.log("Параметры URL:", { mode, oobCode });
+
             if (!oobCode) {
-                alert("Ошибка: Неверная ссылка для сброса пароля.");
+                emailElement.textContent = "Ошибка";
+                validationElement.textContent = "Отсутствует код сброса пароля.";
+                return;
+            }
+            if (mode !== 'resetPassword') {
+                emailElement.textContent = "Ошибка";
+                validationElement.textContent = `Неверный тип действия (ожидался resetPassword, получен: ${mode}).`;
                 return;
             }
 
@@ -115,8 +124,10 @@
                 emailElement.textContent = actionResult.data.email || "Неизвестный email";
                 resetButton.disabled = false;
             } catch (error) {
+                console.error("Ошибка проверки кода:", error);
                 emailElement.textContent = "Ошибка получения email";
-                alert("Ошибка: " + error.message);
+                validationElement.textContent = `Ошибка: ${error.message}`;
+                return;
             }
 
             function generateSecurePassword() {
@@ -148,7 +159,7 @@
 
             passwordField.addEventListener("input", function () {
                 const validationMessage = validatePassword(passwordField.value);
-                validationElement.textContent = validationMessage ? validationMessage : "";
+                validationElement.textContent = validationMessage || "";
                 resetButton.disabled = !!validationMessage;
             });
 
@@ -159,8 +170,6 @@
                 if (validationMessage) {
                     validationElement.textContent = validationMessage;
                     return;
-                } else {
-                    validationElement.textContent = "";
                 }
 
                 try {
@@ -168,7 +177,8 @@
                     alert("Пароль успешно сброшен!");
                     window.location.href = "/login";
                 } catch (error) {
-                    alert("Ошибка: " + error.message);
+                    console.error("Ошибка сброса пароля:", error);
+                    validationElement.textContent = `Ошибка: ${error.message}`;
                 }
             });
 
