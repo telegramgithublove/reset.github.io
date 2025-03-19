@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сброс пароля</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            animation: fadeIn 0.8s ease-in-out;
+            width: 300px;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h2 {
+            margin-bottom: 10px;
+        }
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+        .password-wrapper input {
+            width: calc(100% - 30px);
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+            padding-right: 35px;
+        }
+        .password-wrapper i {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #666;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+            width: 100%;
+        }
+        button:hover {
+            background: #5563c1;
+        }
+        .validation-messages {
+            color: red;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Сброс пароля</h2>
+        <p>Для <strong id="email">загрузка...</strong></p>
+        <div class="password-wrapper">
+            <input type="password" id="password" placeholder="Введите новый пароль">
+            <i class="fas fa-eye" id="togglePassword"></i>
+        </div>
+        <div class="validation-messages" id="validationMessages"></div>
+        <button id="resetButton" disabled>Сбросить пароль</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+        import { getAuth, confirmPasswordReset, checkActionCode } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        document.addEventListener("DOMContentLoaded", async function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const oobCode = urlParams.get('oobCode');
+
+            if (!oobCode) {
+                alert("Ошибка: Неверная ссылка для сброса пароля.");
+                return;
+            }
+
+            const emailElement = document.getElementById("email");
+            const resetButton = document.getElementById("resetButton");
+
+            try {
+                const actionResult = await checkActionCode(auth, oobCode);
+                const userEmail = actionResult.data.email;
+                emailElement.textContent = userEmail;
+                resetButton.disabled = false;
+            } catch (error) {
+                emailElement.textContent = "Ошибка получения email";
+                alert("Ошибка: " + error.message);
+            }
+
+            document.getElementById("togglePassword").addEventListener("click", function () {
+                const passwordField = document.getElementById("password");
+                if (passwordField.type === "password") {
+                    passwordField.type = "text";
+                    this.classList.replace("fa-eye", "fa-eye-slash");
+                } else {
+                    passwordField.type = "password";
+                    this.classList.replace("fa-eye-slash", "fa-eye");
+                }
+            });
+
+            resetButton.addEventListener("click", async function () {
+                const newPassword = document.getElementById("password").value;
+                const validationMessage = validatePassword(newPassword);
+                const validationElement = document.getElementById("validationMessages");
+
+                if (validationMessage) {
+                    validationElement.textContent = validationMessage;
+                    return;
+                } else {
+                    validationElement.textContent = "";
+                }
+
+                try {
+                    await confirmPasswordReset(auth, oobCode, newPassword);
+                    alert("Пароль успешно сброшен!");
+                    window.location.href = "/login";
+                } catch (error) {
+                    alert("Ошибка: " + error.message);
+                }
+            });
+
+            function validatePassword(password) {
+                const minLength = 12;
+                const hasUppercase = /[A-Z]/.test(password);
+                const hasLowercase = /[a-z]/.test(password);
+                const hasNumber = /\d/.test(password);
+                const hasSpecial = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password);
+
+                if (password.length < minLength) return "Пароль должен быть не менее 12 символов.";
+                if (!hasUppercase) return "Пароль должен содержать как минимум одну заглавную букву.";
+                if (!hasLowercase) return "Пароль должен содержать как минимум одну строчную букву.";
+                if (!hasNumber) return "Пароль должен содержать как минимум одну цифру.";
+                if (!hasSpecial) return "Пароль должен содержать как минимум один специальный символ.";
+
+                return null;
+            }
+        });
+    </script>
+</body>
+</html>
